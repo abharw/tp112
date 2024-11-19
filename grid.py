@@ -16,22 +16,6 @@ class Grid:
         self.hovered = hovered
         self.cellPadding = cellPadding
 
-    """
-    probably need to move onMouse stuff out
-    """
-    # def onMousePress(self, mouseX, mouseY):
-    #     selectedCell = self.getCell(self, mouseX, mouseY)
-    #     if selectedCell != None:
-    #         if selectedCell == self.selection:
-    #             self.selection = None
-    #         else:
-    #             self.selection = selectedCell
-    #             self.hovered = None
-
-    # def onMouseMove(self, mouseX, mouseY):
-    #     hoveredCell = self.getCell(self, mouseX, mouseY)
-    #     self.hovered = hoveredCell  
-
     def getCell(self, x, y):
         dx = x - self.boardLeft
         dy = y - self.boardTop
