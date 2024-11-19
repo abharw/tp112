@@ -1,10 +1,6 @@
 import os, math
 from cmu_graphics import * 
 
-"""
-this works for now, but make it work with the grid class
-"""
-
 def onAppStart(app):
 
     app.rows = 5
@@ -20,10 +16,20 @@ def onAppStart(app):
 
 def redrawAll(app):
     drawLabel('File Explorer', app.width//2, 25, size=20)
-    drawBoard(app)
+    drawBoard(app, 5, 6, 50, 50, 400, 400, 6, None, None)
 
 
-def drawBoard(app):
+def drawBoard(app, rows, cols, boardLeft, boardTop, boardWidth, boardHeight, cellBorderWidth, selection=None, hovered=None, cellPadding=5):
+    app.rows = rows
+    app.cols = cols
+    app.boardLeft = boardLeft 
+    app.boardTop = boardTop 
+    app.boardWidth = boardWidth 
+    app.boardHeight = boardHeight
+    app.cellBorderWidth = cellBorderWidth
+    app.selection = selection
+    app.hovered = hovered
+
     for row in range(app.rows):
         for col in range(app.cols):
             drawCell(app, row, col)

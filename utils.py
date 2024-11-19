@@ -1,14 +1,15 @@
 import pytesseract
 import cv2 as cv
 
-
 def processImage(img_path):
     img = cv.imread(img_path)
     img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     img = cv.threshold(img, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)[1]
-
-    target = pytesseract.image_to_string(img, lang='eng_best')
+    target = pytesseract.image_to_string(img, config='--psm 6')
     return target
+
+
+
 
 def listifyCode(code):
     # number of lines in s becomes the number of rows for 2d list
@@ -29,9 +30,11 @@ def listifyCode(code):
             L[i][j] = code[k]
             j += 1
         k += 1
+    
+    return L
 
 if __name__ == '__main__':
     
-    target = processImage(img_path='./test2.jpg')
+    target = processImage(img_path='./test1.png')
     print(target)
     

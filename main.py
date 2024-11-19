@@ -5,7 +5,7 @@ def onAppStart(app):
     app.sidebarColor = rgb(240, 240, 240)
     app.buttonTop, app.buttonLeft = 10, 10
     app.buttonWidth, app.buttonHeight = 180, 100
-    app.imagePath = './test2.jpg'
+    app.imagePath = './test1.png'
     app.code = None
     
 def redrawAll(app):
