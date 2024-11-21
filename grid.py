@@ -1,7 +1,9 @@
 import math 
 from cmu_graphics import *
 
+# adapted largely from CMU CS academy example 
 class Grid:
+    
     def __init__(self,rows, cols, boardLeft, boardTop, 
                 boardWidth, boardHeight, cellBorderWidth,
                 selection, hovered, cellPadding):
@@ -39,7 +41,7 @@ class Grid:
         return (cellWidth, cellHeight)
 
 
-def drawBoard(app, grid: Grid):
+def drawGrid(app, grid: Grid):
     for row in range(grid.rows):
         for col in range(grid.cols):
             drawCell(app, grid, row, col)
@@ -57,3 +59,43 @@ def drawCell(app, grid: Grid, row, col):
     drawRect(cellLeft, cellTop, cellWidth, cellHeight,
              fill=color, border='white',
              borderWidth=grid.cellBorderWidth)
+
+def onAppStart(app):
+    app.boardWidth = 600
+    app.boardHeight = 600
+    app.grid = Grid(
+        rows = 5,
+        cols = 5,
+        boardLeft = app.width // 2 - app.boardWidth // 2,
+        boardWidth = app.boardWidth,
+        boardHeight = app.boardHeight,
+        boardTop = 100,
+        cellBorderWidth = 6,
+        selection = None,
+        hovered = None,
+        cellPadding = 5,
+    )
+    app.selectedFilePath = 'foo'
+
+def onMousePress(app, mouseX, mouseY):
+    selectedCell = app.grid.getCell(mouseX, mouseY)
+    if selectedCell != None:
+        if selectedCell == app.grid.selection:
+            app.grid.selection = None
+        else:
+            app.grid.selection = selectedCell
+            app.grid.hovered = None
+
+def onMouseMove(app, mouseX, mouseY):
+    hoveredCell = app.grid.getCell(mouseX, mouseY)
+    app.grid.hovered = hoveredCell  
+
+def redrawAll(app):
+    drawGrid(app, grid=app.grid)
+
+
+def main(app):
+    runApp(width=800, height=800)
+
+if __name__ == '__main__':
+    main(app)

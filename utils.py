@@ -9,15 +9,13 @@ def processImage(img_path):
     return target
 
 
-
-
 def listifyCode(code):
     # number of lines in s becomes the number of rows for 2d list
     rows = len(code.splitlines())
     # length of longest string becomes number of columns, to keep list rectangular
     cols = max(len(line) for line in code.splitlines())
     # create a 2d "board" to represent the code 
-    L = [ [None]*cols for _ in range(rows) ]
+    L = [ ['']*cols for _ in range(rows) ]
     
     i = j = k = 0
     while i < rows:
