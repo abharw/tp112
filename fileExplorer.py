@@ -20,18 +20,22 @@ class FileExplorerGrid(Grid):
                     selection, hovered, cellPadding)
         self.filesList = filesList
 
-
     def reshapeOneDimensionalList(L, rows, cols):
         # Reshape a 1d list to a 2d list with the given number of dimensions
         # Dimensions = 3x3
         # [1, 2, 3, 4, 5, 6] --> [[1, 2, 3], [4, 5, 6], [None, None, None]]
         newL = [[None]*cols for _ in range(rows)]
+        i = j = k = 0
+        while i < rows:
+            if k == len(L): break
+            newL[i][j] = L[k]
+            j += 1
+            if j >= cols:
+                i += 1
+                j = 0
+            k += 1
+        return newL
 
-        for i in range(rows):
-            for j in range(cols):
-                pass
-
-        
     def drawCell(app, grid, row, col, filesList):
 
         cellLeft, cellTop = grid.getCellLeftTop(row, col)
@@ -82,4 +86,5 @@ def main(app):
 
 if __name__ == '__main__':
     # main(app)
-    listFiles('.')
+    # listFiles('.')
+    print(reshapeOneDimensionalList([1, 2, 3, 4, 5, 6], 3, 3))
