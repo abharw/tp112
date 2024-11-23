@@ -29,9 +29,6 @@ def drawCell(app, grid: TextGrid, row, col):
     else:
         color = grid.cellColor
 
-
-    print(f'Grid: {row},{col}: {grid.codeList[row][col]}')
-    
     character = grid.codeList[row][col]
     centerX = grid.boardLeft + (cellWidth * col) + cellWidth // 2
     centerY = grid.boardTop + (cellHeight * row) + cellHeight // 2
@@ -68,6 +65,7 @@ def onAppStart(app):
     )
 def onMousePress(app, mouseX, mouseY):
     selectedCell = app.grid.getCell(mouseX, mouseY)
+    
     if selectedCell != None:
         if selectedCell == app.grid.selection:
             app.grid.selection = None
@@ -78,9 +76,18 @@ def onMousePress(app, mouseX, mouseY):
 def onMouseMove(app, mouseX, mouseY):
     hoveredCell = app.grid.getCell(mouseX, mouseY)
     app.grid.hovered = hoveredCell  
-    
+
+def onKeyPress(app, key):
+    if app.grid.selection is not None:
+        row, col = app.grid.selection 
+        if key == 'backspace':
+            app.codeList[row][col] = ''
+        else:
+            app.codeList[row][col] = key
+        
 def redrawAll(app):
     drawGrid(app, grid=app.grid)
+    drawLabel(f'Selected Cell: {app.grid.selection}', app.width // 2, 750)
 
 def main(app):
     runApp(width=800, height=800)
