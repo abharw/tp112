@@ -6,7 +6,7 @@ class Grid:
     
     def __init__(self,rows, cols, boardLeft, boardTop, 
                 boardWidth, boardHeight, cellBorderWidth,
-                selection, hovered, cellPadding):
+                selection, hovered, cellBorderColor, cellColor):
         self.rows = rows
         self.cols = cols
         self.boardLeft = boardLeft
@@ -16,7 +16,8 @@ class Grid:
         self.cellBorderWidth = cellBorderWidth
         self.selection = selection
         self.hovered = hovered
-        self.cellPadding = cellPadding
+        self.cellBorderColor = cellBorderColor
+        self.cellColor = cellColor
 
     def getCell(self, x, y):
         dx = x - self.boardLeft
@@ -54,10 +55,10 @@ def drawCell(app, grid: Grid, row, col):
     elif (row, col) == grid.hovered:
         color = 'gold'
     else:
-        color = 'gray'
+        color = grid.cellColor
 
     drawRect(cellLeft, cellTop, cellWidth, cellHeight,
-             fill=color, border='white',
+             fill=color, border= grid.cellBorderColor,
              borderWidth=grid.cellBorderWidth)
 
 def onAppStart(app):
@@ -73,9 +74,10 @@ def onAppStart(app):
         cellBorderWidth = 6,
         selection = None,
         hovered = None,
-        cellPadding = 5,
+        cellBorderColor='white',
+        cellColor='gray'
     )
-    app.selectedFilePath = 'foo'
+
 
 def onMousePress(app, mouseX, mouseY):
     selectedCell = app.grid.getCell(mouseX, mouseY)
