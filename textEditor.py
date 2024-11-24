@@ -13,15 +13,19 @@ class TextGrid(Grid):
 
         self.codeList = codeList
 
-
 def drawGrid(app, grid: TextGrid):
     for row in range(grid.rows):
         for col in range(grid.cols):
             drawCell(app, grid, row, col)
 
+def getCellSize(grid):
+    cellWidth = grid.boardWidth / grid.cols
+    cellHeight = grid.boardHeight / grid.rows
+    return (cellWidth, cellHeight)
+
 def drawCell(app, grid: TextGrid, row, col):
     cellLeft, cellTop = grid.getCellLeftTop(row, col)
-    cellWidth, cellHeight = grid.getCellSize()
+    cellWidth, cellHeight = getCellSize(grid)
     if (row, col) == grid.selection:
         color = 'cyan'
     elif (row, col) == grid.hovered:
@@ -30,12 +34,13 @@ def drawCell(app, grid: TextGrid, row, col):
         color = grid.cellColor
 
     character = grid.codeList[row][col]
-    centerX = grid.boardLeft + (cellWidth * col) + cellWidth // 2
-    centerY = grid.boardTop + (cellHeight * row) + cellHeight // 2
-    drawLabel(character, centerX, centerY)
+    posX = grid.boardLeft + (cellWidth * col) + cellWidth // 2
+    # align characters better vertically in the grid
+    posY = grid.boardTop + (cellHeight * row) + cellHeight - 6
     drawRect(cellLeft, cellTop, cellWidth, cellHeight,
              fill=color, border=grid.cellBorderColor,
              borderWidth=grid.cellBorderWidth)
+    drawLabel(character, posX, posY, font='Roboto Mono', align='center')
 
 def getCodeListDimensions(imagePath):
     target = processImage(imagePath)
@@ -53,14 +58,14 @@ def onAppStart(app):
         rows = app.rows,
         cols = app.cols,
         boardLeft = app.width // 2 - app.boardWidth // 2,
-        boardWidth = app.boardWidth,
-        boardHeight = app.boardHeight,
+        boardWidth = app.boardWidth - 400,
+        boardHeight = app.boardHeight - 100,
         boardTop = 100,
         cellBorderWidth = 1,
         selection = None,
         hovered = None,
         codeList=app.codeList,
-        cellBorderColor='black',
+        cellBorderColor=None,
         cellColor=None
     )
 def onMousePress(app, mouseX, mouseY):
