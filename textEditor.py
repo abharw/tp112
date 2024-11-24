@@ -40,20 +40,31 @@ def drawCell(app, grid: TextGrid, row, col):
     drawRect(cellLeft, cellTop, cellWidth, cellHeight,
              fill=color, border=grid.cellBorderColor,
              borderWidth=grid.cellBorderWidth)
-    drawLabel(character, posX, posY, font='Roboto Mono', align='center')
+    
+    # period characters need to be aligned differently
+    align = 'center' if character == '.' else 'bottom'
 
-def getCodeListDimensions(imagePath):
+    drawLabel(character, posX, posY, font='Courier', align=align, size=30)
+
+def getCodeListAndDimensions(imagePath):
     target = processImage(imagePath)
     L = listifyCode(target)
     rows = len(L)
     cols = len(L[0])
     return (L, rows, cols)
 
+def stringifyCodeList(grid: TextGrid):
+    s = ''
+    for line in grid.codeList:
+        s += (''.join(line) + '\n')
+    return s
+
 def onAppStart(app):
+
     app.boardWidth = 650
     app.boardHeight = 200
     app.imagePath = './images/test1.png'
-    app.codeList, app.rows, app.cols = getCodeListDimensions(app.imagePath)
+    app.codeList, app.rows, app.cols = getCodeListAndDimensions(app.imagePath)
     app.grid = TextGrid(
         rows = app.rows,
         cols = app.cols,
@@ -68,6 +79,7 @@ def onAppStart(app):
         cellBorderColor=None,
         cellColor=None
     )
+
 def onMousePress(app, mouseX, mouseY):
     selectedCell = app.grid.getCell(mouseX, mouseY)
     
@@ -92,6 +104,7 @@ def onKeyPress(app, key):
         
 def redrawAll(app):
     drawGrid(app, grid=app.grid)
+
 
 def main(app):
     runApp(width=800, height=800)

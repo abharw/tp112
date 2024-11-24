@@ -8,7 +8,6 @@ def processImage(img_path):
     target = pytesseract.image_to_string(img, config='--psm 6')
     return target
 
-
 def listifyCode(code):
     # number of lines in s becomes the number of rows for 2d list
     rows = len(code.splitlines())

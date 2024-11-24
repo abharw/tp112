@@ -55,7 +55,6 @@ class FileExplorerGrid(Grid):
         draw the label instead of the color 
         """
 
-
 def onAppStart(app):
     app.boardWidth = 600
     app.boardHeight = 600
@@ -70,9 +69,9 @@ def onAppStart(app):
         selection = None,
         hovered = None,
         cellPadding = 5,
-        cellBorderColor= 'white'
+        cellBorderColor= 'white',
+        rootPath = '.'
     )
-    app.selectedFilePath = 'foo'
 
 def onMousePress(app, mouseX, mouseY):
     selectedCell = app.grid.getCell(mouseX, mouseY)
