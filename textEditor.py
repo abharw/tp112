@@ -92,7 +92,6 @@ def onKeyPress(app, key):
         
 def redrawAll(app):
     drawGrid(app, grid=app.grid)
-    drawLabel(f'Selected Cell: {app.grid.selection}', app.width // 2, 750)
 
 def main(app):
     runApp(width=800, height=800)
