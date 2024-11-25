@@ -1,98 +1,71 @@
 from cmu_graphics import * 
-from grid import Grid, drawGrid
-import os
-
-class FileExplorerGrid(Grid):
-
-    def __init__(self,rows, cols, boardLeft, boardTop, 
-                boardWidth, boardHeight, cellBorderWidth,
-                selection, hovered, cellPadding, rootPath, cellBorderColor):
-        super().__init__(rows, cols, boardLeft, boardTop, 
-                    boardWidth, boardHeight, cellBorderWidth,
-                    selection, hovered, cellPadding)
-        
-        self.rootPath = rootPath
-
-    @staticmethod
-    def listFiles(path):
-        files = os.listdir(path)
-        print(files)
-
-    @staticmethod
-    def reshapeOneDimensionalList(L, rows, cols):
-        # Reshape a 1d list to a 2d list with the given number of dimensions
-        # Dimensions = 3x3
-        # [1, 2, 3, 4, 5, 6] --> [[1, 2, 3], [4, 5, 6], [None, None, None]]
-        newL = [[None]*cols for _ in range(rows)]
-        i = j = k = 0
-        while i < rows:
-            if k == len(L): break
-            newL[i][j] = L[k]
-            j += 1
-            if j >= cols:
-                i += 1
-                j = 0
-            k += 1
-        return newL
-    
-    def drawGrid(self, app, grid: Grid):
-        filesList = FileExplorerGrid.listFiles(self.rootPath)
-        reshapedFilesList = FileExplorerGrid.reshapeOneDimensionalList(filesList, self.rows, self.cols)
-        for row in range(grid.rows):
-            for col in range(grid.cols):
-                self.drawCell(self, app, grid, row, col, reshapedFilesList)
-
-    def drawCell(self, app, grid, row, col, reshapedFilesList):
-        cellLeft, cellTop = grid.getCellLeftTop(row, col)
-        cellWidth, cellHeight = grid.getCellSize()
-        # if (row, col) == grid.selection:
-        #     color = 'cyan'
-        # elif (row, col) == grid.hovered:
-        #     color = 'gold'
-        # else:
-        #     color = 'gray'
-        """
-        draw the label instead of the color 
-        """
+import os 
 
 def onAppStart(app):
-    app.boardWidth = 600
-    app.boardHeight = 600
-    app.grid = FileExplorerGrid(
-        rows = 5,
-        cols = 5,
-        boardLeft = app.width // 2 - app.boardWidth // 2,
-        boardWidth = app.boardWidth,
-        boardHeight = app.boardHeight,
-        boardTop = 100,
-        cellBorderWidth = 6,
-        selection = None,
-        hovered = None,
-        cellPadding = 5,
-        cellBorderColor= 'white',
-        rootPath = '.'
+
+    app.files = listFiles()
+    # https://docs.python.org/3/library/os.html  
+    app.fileStack = [os.getcwd()]
+    app.previousFiles = app.files
+    app.lineOffset = 30
+    app.selectedFileIndex = 0
+    app.fileTreeLeft = 40
+    app.fileTreeTop = app.height // 2 - (len(app.files) * app.lineOffset)
+    app.characterWidth = 20
+    app.characterHeight = 20
+    app.selectedFile = getCurrentFilePath(app)
+
+
+def drawFiles(app):
+    for i in range(len(app.files)):
+        file = app.files[i]
+        isBold = True if os.path.isdir(file) else False
+        drawLabel(file, app.fileTreeLeft, app.fileTreeTop + app.lineOffset*i, align='left', font='Courier', size=30, fill='gray', bold=isBold)
+
+def listFiles(path='.'):
+    files = []
+    dirs = []
+    for file in os.listdir(path):
+        if os.path.isdir(file):
+            dirs.append(file)
+        else:
+            files.append(file)
+    return dirs + files
+
+def getCurrentFilePath(app):
+    return os.path.abspath(app.files[app.selectedFileIndex])
+
+def drawSelectedFileLine(app):
+    drawLine(
+        app.fileTreeLeft, 
+        app.fileTreeTop + app.lineOffset * app.selectedFileIndex + app.characterHeight,
+        app.fileTreeLeft + len(app.files[app.selectedFileIndex]) * app.characterWidth, 
+        app.fileTreeTop + app.lineOffset * app.selectedFileIndex + app.characterHeight,
+        lineWidth = 3
     )
 
-def onMousePress(app, mouseX, mouseY):
-    selectedCell = app.grid.getCell(mouseX, mouseY)
-    if selectedCell != None:
-        if selectedCell == app.grid.selection:
-            app.grid.selection = None
-        else:
-            app.grid.selection = selectedCell
-            app.grid.hovered = None
-
-def onMouseMove(app, mouseX, mouseY):
-    hoveredCell = app.grid.getCell(mouseX, mouseY)
-    app.grid.hovered = hoveredCell  
+def onKeyPress(app, key):
+    if key == 'up' and app.selectedFileIndex > 0:
+        app.selectedFileIndex -= 1
+    elif key == 'down' and app.selectedFileIndex < len(app.files) - 1:
+        app.selectedFileIndex += 1
+    elif key == 'enter' and os.path.isdir(getCurrentFilePath(app)):
+        app.fileStack.append(getCurrentFilePath(app))
+        app.files = listFiles(getCurrentFilePath(app))
+        app.selectedFileIndex = 0
+    elif key == 'backspace' and len(app.fileStack) > 1:
+        app.fileStack.pop()
+        previousDir = app.fileStack[-1]
+        app.files = listFiles(previousDir)
+        app.selectedFileIndex = 0
 
 def redrawAll(app):
-    drawGrid(app, grid=app.grid)
-    drawLabel(f'Current Path: {app.selectedFilePath}', app.width // 2, 750, size=18)
+    drawFiles(app)
+    drawSelectedFileLine(app)
 
 def main(app):
-    runApp(width=800, height=800)
+    runApp(width=1000, height=1000)
 
 if __name__ == '__main__':
+    # print(listFiles(app))
     main(app)
-

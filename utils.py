@@ -32,6 +32,6 @@ def listifyCode(code):
 
 if __name__ == '__main__':
     
-    target = processImage(img_path='./test1.png')
+    target = processImage(img_path='./images/test1.png')
     print(target)
     
