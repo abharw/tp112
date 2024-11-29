@@ -15,7 +15,6 @@ def onAppStart(app):
     app.characterHeight = 20
     app.selectedFile = getCurrentFilePath(app)
 
-
 def drawFiles(app):
     for i in range(len(app.files)):
         file = app.files[i]

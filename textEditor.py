@@ -105,7 +105,6 @@ def onKeyPress(app, key):
 def redrawAll(app):
     drawGrid(app, grid=app.grid)
 
-
 def main(app):
     runApp(width=800, height=800)
 

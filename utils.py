@@ -18,9 +18,7 @@ def listifyCode(code):
     
     i = j = k = 0
     while i < rows:
-
         if code[k] == '\n':
-
             i += 1
             j = 0
         else:    
@@ -31,7 +29,6 @@ def listifyCode(code):
     return L
 
 if __name__ == '__main__':
-    
     target = processImage(img_path='./images/test1.png')
-    print(target)
+
     

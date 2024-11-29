@@ -5,6 +5,11 @@ import io, sys, os
 
 ERR_MESSAGE = "There's an error somewhere!"
 
+# imagets from flaticons
+def setColorScheme(mode):
+    pass
+
+
 def onAppStart(app):
     # MAIN SCREEN PARAMS
     app.lightGray = rgb(240, 240, 240)
@@ -15,8 +20,7 @@ def onAppStart(app):
     app.code = None
     app.output = None
     app.grid = None
-
-    # FILE TREE PARAMS
+    app.colorScheme = 'light'
 
 ###############
 # MAIN SCREEN #
@@ -42,7 +46,6 @@ def getOutput(app):
     # redirect stdout to the buffer
     sys.stdout = outputBuffer
     # execute the code
-
     try:
         exec(stringifyCodeList(app.grid))
     except:
@@ -222,7 +225,6 @@ def fileTree_redrawAll(app):
     drawSelectedFileLine(app)
     if app.flashImageOpenError:
         drawImageOpenError(app)
-
 
 def main(app):
     runAppWithScreens(height=1000, width=1000, initialScreen='main')
