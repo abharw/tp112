@@ -1,18 +1,12 @@
 from cmu_graphics import *
-from utils import processImage
+from utils import processImage, loadColors, getScaledImageSize
 from textEditor import TextGrid, drawGrid, getCodeListAndDimensions, stringifyCodeList
 import io, sys, os
 
 ERR_MESSAGE = "There's an error somewhere!"
 
-# imagets from flaticons
-def setColorScheme(mode):
-    pass
-
-
 def onAppStart(app):
     # MAIN SCREEN PARAMS
-    app.lightGray = rgb(240, 240, 240)
     app.buttonTop, app.buttonLeft = 10, 10
     app.buttonWidth, app.buttonHeight = 180, 80
     app.lineOffset = 36
@@ -20,12 +14,34 @@ def onAppStart(app):
     app.code = None
     app.output = None
     app.grid = None
-    app.colorScheme = 'light'
+
+    app.colorSchemeIsLight = True
+
+    (app.primary, app.secondary, app.tertiary, 
+    app.green, app.red, app.text, app.lightUrl, app.darkUrl) = loadColors(app.colorSchemeIsLight)
+    
+    app.background = app.primary 
+    
+    app.colorSchemeSwitcherUrl = app.lightUrl if app.colorSchemeIsLight  else app.darkUrl
+
+    app.fileExplorerButtonX = 10
+    app.fileExplorerButtonY = 10
+    
+    app.runButtonX = 250
+    app.runButtonY = 10
+    
+    app.colorSchemeSwitcherX = 800
+    app.colorSchemeSwitcherY = 50
+
+    app.outputBoxX = 400
+    app.outputBoxY = 500
+    app.outputBoxHeight = 500
 
 ###############
 # MAIN SCREEN #
 ###############
 
+# FIX THIS
 def drawLineNumbers(app, x, y):
     lineNumbers = list(range(len(app.code)))
     lineNumbers = [num + 1 for num in lineNumbers]
@@ -36,7 +52,13 @@ def drawLineNumbers(app, x, y):
 def drawOutput(app, x, y):
     for i in range(len(app.output)):
         line = app.output[i]
-        drawLabel(line, x, y + app.lineOffset*i, size=30, align='left', font='Courier', fill='gray')
+        drawLabel(line, x, y + app.lineOffset*i, size=30, align='left', font='Courier', fill=app.tertiary)
+
+def drawColorschemeSwitcher(app, x, y):
+    im_width, im_height = getScaledImageSize(app.colorSchemeSwitcherUrl, 7)
+    drawImage(app.colorSchemeSwitcherUrl, x, y, 
+              width=im_width, height=im_height, 
+              align='center', opacity=40)
 
 def getOutput(app):
     # https://docs.python.org/3/library/functions.html#exec 
@@ -91,12 +113,14 @@ def main_onKeyPress(app, key):
                 app.grid.codeList[row][col] = key
                
 def main_onMousePress(app, mouseX, mouseY):
-
+    # check if file explorer is clicked
     if 10 <= mouseX <= 190 and 10 <= mouseY <= 90:
         setActiveScreen('fileTree')
+    # check if run button is clicked
     if app.code is not None:
         if 250 <= mouseX <= 430 and 10 <= mouseY <= 90:
             getOutput(app)
+    # grid highlighting logic
     if app.grid is not None:
         selectedCell = app.grid.getCell(mouseX, mouseY)
         if selectedCell != None:
@@ -105,32 +129,54 @@ def main_onMousePress(app, mouseX, mouseY):
             else:
                 app.grid.selection = selectedCell
                 app.grid.hovered = None
+    # chenk if colorscheme switcher is clicked
+    im_width, im_height = getScaledImageSize(app.colorSchemeSwitcherUrl, 7)
+    if (app.colorSchemeSwitcherX - im_width // 2 <= mouseX <= app.colorSchemeSwitcherX + im_width // 2 and 
+        app.colorSchemeSwitcherY - im_height // 2 <= mouseY <= app.colorSchemeSwitcherY + im_height // 2):
+        reloadColors(app)
+
+def reloadColors(app):
+    app.colorSchemeIsLight = not app.colorSchemeIsLight
+    (app.primary, app.secondary, app.tertiary, 
+    app.green, app.red, app.text, app.lightUrl, app.darkUrl) = loadColors(app.colorSchemeIsLight)
+    app.background = app.primary
 
 def main_redrawAll(app):
-    drawRect(0, 0, app.width, 100, fill=app.lightGray)
-    # File Explorer Button
-    drawRect(10, 10, app.buttonWidth, app.buttonHeight, fill='white', border='darkGray')
-    drawLabel('File Explorer', 10 + app.buttonWidth/ 2, 10 + app.buttonHeight/2, size=18)
 
-    # Editor Button
-    drawRect(400, 500, app.width, 500, fill=None, border='darkGray')
+    # file explorer button
+    drawRect(app.fileExplorerButtonX, app.fileExplorerButtonY, 
+             app.buttonWidth, app.buttonHeight, fill=app.primary, 
+             border=app.secondary)
+    drawLabel('File Explorer', app.fileExplorerButtonX + app.buttonWidth // 2, 
+              app.fileExplorerButtonY + app.buttonHeight // 2, size=18, fill=app.text)
 
-    # Display Code and run button
+    # output box
+    drawRect(app.outputBoxX, app.outputBoxY, app.width, app.outputBoxHeight, 
+             fill=None, border=app.secondary)
+
+    # colorscheme switcher
+    drawColorschemeSwitcher(app, app.colorSchemeSwitcherX, app.colorSchemeSwitcherY)
+
+    # display code and run button
     if app.code is not None:
-        drawLine(30, 100, 30, app.height, fill='darkGray')
+        drawLine(0, 100, app.width, 100, fill=app.secondary)
+        drawLine(30, 100, 30, app.height, fill=app.secondary)
         # drawLineNumbers(app, 15, 120)
+        
         drawGrid(app, grid=app.grid)
 
-        # Run button
-        drawRect(250, 10, app.buttonWidth, app.buttonHeight, fill='white', border='darkGray')
-        drawLabel('Run Code', 250 + app.buttonWidth/ 2, 10 + app.buttonHeight/2, size=18, fill='green')
+        # run button
+        drawRect(app.runButtonX, app.runButtonY, app.buttonWidth, app.buttonHeight, fill=app.primary, border=app.secondary)
+        drawLabel('Run Code', app.runButtonX + app.buttonWidth // 2, 
+                  app.runButtonY + app.buttonHeight // 2, size=18, fill=app.green)
 
-    # Display Output 
+    # display Output 
     if app.output is not None :
         drawOutput(app, 420, 530)
 
     if app.grid == None:
-        drawLabel(f'Select an image file from the file explorer to get started!', 35, 300, font='Courier', size=20, bold=True, align='left')
+        drawLabel(f'Select an image file from the file explorer to get started!', 35, 300, 
+                  font='Courier', size=20, bold=True, align='left', fill=app.secondary)
 
 #############
 # FILE TREE #
@@ -140,23 +186,23 @@ def fileTree_onScreenActivate(app):
     app.files = listFiles()
     # https://docs.python.org/3/library/os.html  
     app.fileStack = [os.getcwd()]
-
     app.previousFiles = app.files
     app.lineOffset = 30
     app.selectedFileIndex = 0
     app.fileTreeLeft = 40
-    app.fileTreeTop = app.height // 2 - (len(app.files) * app.lineOffset) + 30
+    app.fileTreeTop = app.height // 2 - (len(app.files) * app.lineOffset) + 100
     app.characterWidth = 20
     app.characterHeight = 20
     app.selectedFile = getCurrentFilePath(app)
     app.selectedFileIsImage = False
     app.flashImageOpenError = False
-
+    
 def drawFiles(app):
     for i in range(len(app.files)):
         file = app.files[i]
         isBold = True if os.path.isdir(file) else False
-        drawLabel(file, app.fileTreeLeft, app.fileTreeTop + app.lineOffset*i, align='left', font='Courier', size=30, fill='gray', bold=isBold)
+        drawLabel(file, app.fileTreeLeft, app.fileTreeTop + app.lineOffset*i, 
+                  align='left', font='Courier', size=30, fill=app.tertiary, bold=isBold)
      
 def drawSelectedFileLine(app):
     drawLine(
@@ -164,12 +210,13 @@ def drawSelectedFileLine(app):
         app.fileTreeTop + app.lineOffset * app.selectedFileIndex + app.characterHeight,
         app.fileTreeLeft + len(app.files[app.selectedFileIndex]) * app.characterWidth, 
         app.fileTreeTop + app.lineOffset * app.selectedFileIndex + app.characterHeight,
-        lineWidth = 3
+        lineWidth = 3, fill=app.text
     )
 
 def drawImageOpenError(app):
     x, y = app.width // 2, app.height // 2 + 300
-    drawLabel('The currently selected file is not an image!', x, y, size=30, fill='red', font='Courier', bold=True)
+    drawLabel('The currently selected file is not an image!', x, y, 
+              size=30, fill=app.red, font='Courier', bold=True)
 
 def isImage(app):
     fileSuffixes = ('.png', '.jpg')
