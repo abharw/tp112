@@ -1,6 +1,8 @@
+import PIL.ImageOps
 import pytesseract
 import cv2 as cv
 from cmu_graphics import *
+import PIL
 
 def processImage(img_path):
     img = cv.imread(img_path)
@@ -52,7 +54,13 @@ def getScaledImageSize(url, shrinkFactor):
     width, height = getImageSize(url)
     return width // shrinkFactor, height // shrinkFactor
 
-if __name__ == '__main__':
-    target = processImage(img_path='./images/test1.png')
+def reloadColors(app):
+    app.colorSchemeIsLight = not app.colorSchemeIsLight
+    (app.primary, app.secondary, app.tertiary, 
+    app.green, app.red, app.textColor, app.lightUrl, app.darkUrl) = loadColors(app.colorSchemeIsLight)
+    app.background = app.primary
+    app.colorSchemeSwitcherUrl = app.lightUrl if app.colorSchemeIsLight else app.darkUrl
 
+if __name__ == '__main__':
+    pass
     

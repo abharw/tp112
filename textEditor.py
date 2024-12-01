@@ -5,25 +5,26 @@ from utils import processImage, listifyCode
 class TextGrid(Grid):
     def __init__(self, rows, cols, boardLeft, boardTop, 
                  boardWidth, boardHeight, cellBorderWidth,
-                 selection, hovered, codeList, cellBorderColor, cellColor):
+                 selection, hovered, codeList, cellBorderColor, cellColor,textColor):
         
         super().__init__(rows, cols, boardLeft, boardTop, 
                          boardWidth, boardHeight, cellBorderWidth,
                          selection, hovered, cellBorderColor, cellColor)
 
         self.codeList = codeList
+        self.textColor = textColor
 
 def drawGrid(app, grid: TextGrid):
     for row in range(grid.rows):
         for col in range(grid.cols):
-            drawCell(app, grid, row, col)
+            drawCell(grid, row, col)
 
 def getCellSize(grid):
     cellWidth = grid.boardWidth / grid.cols
     cellHeight = grid.boardHeight / grid.rows
     return (cellWidth, cellHeight)
 
-def drawCell(app, grid: TextGrid, row, col):
+def drawCell(grid: TextGrid, row, col):
     cellLeft, cellTop = grid.getCellLeftTop(row, col)
     cellWidth, cellHeight = getCellSize(grid)
     if (row, col) == grid.selection:
@@ -44,7 +45,7 @@ def drawCell(app, grid: TextGrid, row, col):
     # period characters need to be aligned differently
     align = 'center' if character == '.' else 'bottom'
 
-    drawLabel(character, posX, posY, font='Courier', align=align, size=30)
+    drawLabel(character, posX, posY, font='Courier', align=align, size=30, fill=grid.textColor)
 
 def getCodeListAndDimensions(imagePath):
     target = processImage(imagePath)
@@ -52,6 +53,9 @@ def getCodeListAndDimensions(imagePath):
     rows = len(L)
     cols = len(L[0])
     return (L, rows, cols)
+
+def updateGridColors(app, grid: TextGrid):
+    grid.textColor = app.textColor
 
 def stringifyCodeList(grid: TextGrid):
     s = ''
@@ -107,6 +111,8 @@ def redrawAll(app):
 
 def main(app):
     runApp(width=800, height=800)
+
+
 
 if __name__ == '__main__':
     main(app)

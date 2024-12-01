@@ -1,6 +1,6 @@
 from cmu_graphics import *
-from utils import processImage, loadColors, getScaledImageSize
-from textEditor import TextGrid, drawGrid, getCodeListAndDimensions, stringifyCodeList
+from utils import processImage, loadColors, getScaledImageSize, reloadColors
+from textEditor import TextGrid, drawGrid, getCodeListAndDimensions, stringifyCodeList, updateGridColors
 import io, sys, os
 
 ERR_MESSAGE = "There's an error somewhere!"
@@ -17,13 +17,13 @@ def onAppStart(app):
 
     app.colorSchemeIsLight = True
 
-    (app.primary, app.secondary, app.tertiary, 
-    app.green, app.red, app.text, app.lightUrl, app.darkUrl) = loadColors(app.colorSchemeIsLight)
+    (app.primary, app.secondary, app.tertiary,
+    app.green, app.red, app.textColor, app.lightUrl, 
+    app.darkUrl) = loadColors(app.colorSchemeIsLight)
     
     app.background = app.primary 
     
-    app.colorSchemeSwitcherUrl = app.lightUrl if app.colorSchemeIsLight  else app.darkUrl
-
+    app.colorSchemeSwitcherUrl = app.lightUrl if app.colorSchemeIsLight else app.darkUrl
     app.fileExplorerButtonX = 10
     app.fileExplorerButtonY = 10
     
@@ -56,9 +56,11 @@ def drawOutput(app, x, y):
 
 def drawColorschemeSwitcher(app, x, y):
     im_width, im_height = getScaledImageSize(app.colorSchemeSwitcherUrl, 7)
+
     drawImage(app.colorSchemeSwitcherUrl, x, y, 
-              width=im_width, height=im_height, 
-              align='center', opacity=40)
+            width=im_width, height=im_height, 
+            align='center')
+
 
 def getOutput(app):
     # https://docs.python.org/3/library/functions.html#exec 
@@ -95,7 +97,8 @@ def setGridParams(app):
         hovered = None,
         codeList=app.codeList,
         cellBorderColor=None,
-        cellColor=None
+        cellColor=None,
+        textColor=app.textColor
     )
 
 def main_onMouseMove(app, mouseX, mouseY):
@@ -134,12 +137,7 @@ def main_onMousePress(app, mouseX, mouseY):
     if (app.colorSchemeSwitcherX - im_width // 2 <= mouseX <= app.colorSchemeSwitcherX + im_width // 2 and 
         app.colorSchemeSwitcherY - im_height // 2 <= mouseY <= app.colorSchemeSwitcherY + im_height // 2):
         reloadColors(app)
-
-def reloadColors(app):
-    app.colorSchemeIsLight = not app.colorSchemeIsLight
-    (app.primary, app.secondary, app.tertiary, 
-    app.green, app.red, app.text, app.lightUrl, app.darkUrl) = loadColors(app.colorSchemeIsLight)
-    app.background = app.primary
+        updateGridColors(app, grid=app.grid)
 
 def main_redrawAll(app):
 
@@ -147,8 +145,9 @@ def main_redrawAll(app):
     drawRect(app.fileExplorerButtonX, app.fileExplorerButtonY, 
              app.buttonWidth, app.buttonHeight, fill=app.primary, 
              border=app.secondary)
+    
     drawLabel('File Explorer', app.fileExplorerButtonX + app.buttonWidth // 2, 
-              app.fileExplorerButtonY + app.buttonHeight // 2, size=18, fill=app.text)
+              app.fileExplorerButtonY + app.buttonHeight // 2, size=18, fill=app.textColor)
 
     # output box
     drawRect(app.outputBoxX, app.outputBoxY, app.width, app.outputBoxHeight, 
@@ -210,8 +209,7 @@ def drawSelectedFileLine(app):
         app.fileTreeTop + app.lineOffset * app.selectedFileIndex + app.characterHeight,
         app.fileTreeLeft + len(app.files[app.selectedFileIndex]) * app.characterWidth, 
         app.fileTreeTop + app.lineOffset * app.selectedFileIndex + app.characterHeight,
-        lineWidth = 3, fill=app.text
-    )
+        lineWidth = 3, fill=app.textColor)
 
 def drawImageOpenError(app):
     x, y = app.width // 2, app.height // 2 + 300
