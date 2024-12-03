@@ -255,30 +255,26 @@ def joinPaths(app):
     selectedFile = app.files[app.selectedFileIndex]
     return os.path.join(currentDirectory, selectedFile)
 
+def moveFileSelection(app, index):
+    app.selectedFileIndex = index
+    app.selectedFile = joinPaths(app)
+    isImage(app)
+
 def fileTree_onKeyPress(app, key):
     app.flashImageOpenError = False
     if key == 'up' and app.selectedFileIndex > 0:
-        app.selectedFileIndex -= 1
-        app.selectedFile = joinPaths(app)
-        isImage(app)
+        moveFileSelection(app, app.selectedFileIndex -1)
     elif key == 'down' and app.selectedFileIndex < len(app.files) - 1:
-        print(app.selectedFile)
-        app.selectedFileIndex += 1
-        app.selectedFile = joinPaths(app)
-        isImage(app)
+        moveFileSelection(app, app.selectedFileIndex +1)
     elif key == 'enter' and os.path.isdir(getCurrentFilePath(app)):
         app.fileStack.append(getCurrentFilePath(app))
         app.files = listFiles(getCurrentFilePath(app))
-        app.selectedFileIndex = 0
-        app.selectedFile = joinPaths(app)
-        isImage(app)
+        moveFileSelection(app, 0)
     elif key == 'backspace' and len(app.fileStack) > 1:
         app.fileStack.pop()
         previousDir = app.fileStack[-1]
         app.files = listFiles(previousDir)
-        app.selectedFileIndex = 0
-        app.selectedFile = joinPaths(app)
-        isImage(app)
+        moveFileSelection(app, 0)
     elif key == 'tab':
         app.selectedFile = joinPaths(app)
         if app.selectedFileIsImage:
