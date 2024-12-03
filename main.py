@@ -1,6 +1,10 @@
 from cmu_graphics import *
 from utils import processImage, loadColors, getScaledImageSize, reloadColors
-from textEditor import TextGrid, drawGrid, getCodeListAndDimensions, stringifyCodeList, updateGridColors
+from textEditor import (
+    TextGrid, drawGrid, getCodeListAndDimensions, 
+    stringifyCodeList, updateGridColors)
+from traceCode import trace
+
 import io, sys, os
 
 ERR_MESSAGE = "There's an error somewhere!"
@@ -33,6 +37,9 @@ def onAppStart(app):
     app.colorSchemeSwitcherX = 800
     app.colorSchemeSwitcherY = 50
 
+    app.traceButtonX = 500
+    app.traceButtonY = 10
+
     app.outputBoxX = 400
     app.outputBoxY = 500
     app.outputBoxHeight = 500
@@ -40,14 +47,6 @@ def onAppStart(app):
 ###############
 # MAIN SCREEN #
 ###############
-
-# FIX THIS
-def drawLineNumbers(app, x, y):
-    lineNumbers = list(range(len(app.code)))
-    lineNumbers = [num + 1 for num in lineNumbers]
-    for i in range(len(lineNumbers)):
-        lineNumber = lineNumbers[i]
-        drawLabel(lineNumber, x, y + app.lineOffset*i, align='center', font='Courier', size=30, fill='gray')
 
 def drawOutput(app, x, y):
     for i in range(len(app.output)):
@@ -59,8 +58,11 @@ def drawColorschemeSwitcher(app, x, y):
 
     drawImage(app.colorSchemeSwitcherUrl, x, y, 
             width=im_width, height=im_height, 
-            align='center')
+            align='center', opacity=40)
 
+def drawTextButton(app, text, x, y, width, height, fill):
+    drawRect(x, y, width, height, fill=app.primary, border=app.secondary)
+    drawLabel(text, x + width // 2, y + height // 2, size=18, fill=fill)
 
 def getOutput(app):
     # https://docs.python.org/3/library/functions.html#exec 
@@ -81,7 +83,6 @@ def getOutput(app):
     app.output = capturedOutput.splitlines()
 
 def setGridParams(app):
-
     app.boardWidth = 800
     app.boardHeight = 350
     app.codeList, app.rows, app.cols = getCodeListAndDimensions(app.imagePath)
@@ -91,7 +92,7 @@ def setGridParams(app):
         boardLeft = 35,
         boardWidth = app.boardWidth - 400,
         boardHeight = app.boardHeight - 100,
-        boardTop = 100,
+        boardTop = 150,
         cellBorderWidth = 1,
         selection = None,
         hovered = None,
@@ -117,12 +118,19 @@ def main_onKeyPress(app, key):
                
 def main_onMousePress(app, mouseX, mouseY):
     # check if file explorer is clicked
-    if 10 <= mouseX <= 190 and 10 <= mouseY <= 90:
+    if (app.fileExplorerButtonX <= mouseX <= app.fileExplorerButtonX + app.buttonWidth and 
+        app.fileExplorerButtonY <= mouseY <= app.fileExplorerButtonY + app.buttonHeight):
         setActiveScreen('fileTree')
     # check if run button is clicked
     if app.code is not None:
-        if 250 <= mouseX <= 430 and 10 <= mouseY <= 90:
+        if (app.runButtonX <= mouseX <= app.runButtonX + app.buttonWidth and 
+            app.runButtonY <= mouseY <= app.runButtonY + app.buttonHeight):
             getOutput(app)
+    # check if trace button is clicked
+    if app.code is not None:
+        if (app.traceButtonX <= mouseX <= app.traceButtonX + app.buttonWidth and 
+            app.traceButtonY <= mouseY <= app.traceButtonY + app.buttonHeight):
+            setActiveScreen('trace')
     # grid highlighting logic
     if app.grid is not None:
         selectedCell = app.grid.getCell(mouseX, mouseY)
@@ -137,38 +145,32 @@ def main_onMousePress(app, mouseX, mouseY):
     if (app.colorSchemeSwitcherX - im_width // 2 <= mouseX <= app.colorSchemeSwitcherX + im_width // 2 and 
         app.colorSchemeSwitcherY - im_height // 2 <= mouseY <= app.colorSchemeSwitcherY + im_height // 2):
         reloadColors(app)
-        updateGridColors(app, grid=app.grid)
+        if app.grid != None:
+            updateGridColors(app, grid=app.grid)
 
 def main_redrawAll(app):
 
     # file explorer button
-    drawRect(app.fileExplorerButtonX, app.fileExplorerButtonY, 
-             app.buttonWidth, app.buttonHeight, fill=app.primary, 
-             border=app.secondary)
-    
-    drawLabel('File Explorer', app.fileExplorerButtonX + app.buttonWidth // 2, 
-              app.fileExplorerButtonY + app.buttonHeight // 2, size=18, fill=app.textColor)
+    drawTextButton(app, 'File Explorer', app.fileExplorerButtonX, app.fileExplorerButtonY, 
+             app.buttonWidth, app.buttonHeight, fill=app.textColor)
 
     # output box
     drawRect(app.outputBoxX, app.outputBoxY, app.width, app.outputBoxHeight, 
              fill=None, border=app.secondary)
-
     # colorscheme switcher
     drawColorschemeSwitcher(app, app.colorSchemeSwitcherX, app.colorSchemeSwitcherY)
 
     # display code and run button
     if app.code is not None:
-        drawLine(0, 100, app.width, 100, fill=app.secondary)
-        drawLine(30, 100, 30, app.height, fill=app.secondary)
-        # drawLineNumbers(app, 15, 120)
-        
+        drawLine(0, 100, app.width, 100, fill=app.secondary)        
         drawGrid(app, grid=app.grid)
-
         # run button
-        drawRect(app.runButtonX, app.runButtonY, app.buttonWidth, app.buttonHeight, fill=app.primary, border=app.secondary)
-        drawLabel('Run Code', app.runButtonX + app.buttonWidth // 2, 
-                  app.runButtonY + app.buttonHeight // 2, size=18, fill=app.green)
-
+        drawTextButton(app, 'Run Code', app.runButtonX, app.runButtonY, 
+                app.buttonWidth, app.buttonHeight, fill=app.green)
+        # trace button
+        drawTextButton(app, 'Trace Code', app.traceButtonX, app.traceButtonY, 
+                       app.buttonWidth, app.buttonHeight, fill=app.textColor)
+        
     # display Output 
     if app.output is not None :
         drawOutput(app, 420, 530)
@@ -189,12 +191,15 @@ def fileTree_onScreenActivate(app):
     app.lineOffset = 30
     app.selectedFileIndex = 0
     app.fileTreeLeft = 40
-    app.fileTreeTop = app.height // 2 - (len(app.files) * app.lineOffset) + 100
+    app.fileTreeTop = app.height // 2 - (len(app.files) * app.lineOffset) + 150
     app.characterWidth = 20
     app.characterHeight = 20
     app.selectedFile = getCurrentFilePath(app)
     app.selectedFileIsImage = False
     app.flashImageOpenError = False
+
+    app.backButtonX = 10
+    app.backButtonY = 10
     
 def drawFiles(app):
     for i in range(len(app.files)):
@@ -265,14 +270,45 @@ def fileTree_onKeyPress(app, key):
         else:
             app.flashImageOpenError = True
 
+def fileTree_onMousePress(app, mouseX, mouseY):
+    if (app.backButtonX <= mouseX <= app.backButtonX + app.buttonWidth and 
+        app.backButtonY <= mouseY <= app.backButtonY + app.buttonHeight):
+        setActiveScreen('main')
+
 def fileTree_redrawAll(app):
     drawFiles(app)
     drawSelectedFileLine(app)
+    # draw back button
+    drawTextButton(app, 'Go Back', app.backButtonX, app.backButtonY, 
+                app.buttonWidth, app.buttonHeight, fill=app.textColor)
     if app.flashImageOpenError:
         drawImageOpenError(app)
 
 def main(app):
     runAppWithScreens(height=1000, width=1000, initialScreen='main')
+
+#########
+# TRACE #
+#########
+
+def trace_onScreenActivate(app):
+    app.backButtonX = 10
+    app.backButtonY = 10
+    app.traceHistory = trace(app.grid.codeList)
+
+def trace_onKeyPress(app, key):
+    pass
+
+def trace_onMousePress(app, mouseX, mouseY):
+    if (app.backButtonX <= mouseX <= app.backButtonX + app.buttonWidth and 
+        app.backButtonY <= mouseY <= app.backButtonY + app.buttonHeight):
+        setActiveScreen('main')
+
+def trace_redrawAll(app):
+    # draw a back button
+    drawTextButton(app, 'Go Back', app.backButtonX, app.backButtonY, 
+                   app.buttonWidth, app.buttonHeight, fill=app.textColor)
+    drawGrid(app, grid=app.grid)
 
 if __name__ == '__main__':
     main(app)

@@ -1,8 +1,6 @@
-import PIL.ImageOps
 import pytesseract
 import cv2 as cv
 from cmu_graphics import *
-import PIL
 
 def processImage(img_path):
     img = cv.imread(img_path)
