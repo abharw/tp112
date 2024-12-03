@@ -104,14 +104,11 @@ def traceHelper(code, variables, functions):
 
 if __name__ == '__main__':
     code = """
-    x = 10
-    y = 25
+    x = 1.5
+    y = 6.3
 
     def add(a, b):
-        result = a + b
-        if result < 30:
-            print('lower')
-        print(f'result is {result}')
+        print(f'The sum is {a + b}')
 
     add(x, y)
     """

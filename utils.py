@@ -1,13 +1,41 @@
 import pytesseract
 import cv2 as cv
+import os
 from cmu_graphics import *
 
+# def processImage(img_path):
+#     abs_path = os.path.abspath(img_path)
+#     img = cv.imread(abs_path)
+#     img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+#     img = cv.threshold(img, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)[1]
+#     target = pytesseract.image_to_string(img, config='--psm 6')
+#     return target
+
+import cv2 as cv
+import pytesseract
+import os
+
 def processImage(img_path):
-    img = cv.imread(img_path)
+    # Verify the file path
+    abs_path = os.path.abspath(img_path)
+    if not os.path.exists(abs_path):
+        raise FileNotFoundError(f"The file at {abs_path} does not exist.")
+    
+    # Attempt to read the image
+    img = cv.imread(abs_path)
+    if img is None:
+        raise ValueError(f"Failed to load the image. Ensure it's a valid image file: {abs_path}")
+    
+    # Convert to grayscale
     img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    img = cv.threshold(img, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)[1]
+    
+    # Apply thresholding
+    _, img = cv.threshold(img, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+    
+    # Extract text using pytesseract
     target = pytesseract.image_to_string(img, config='--psm 6')
     return target
+
 
 def listifyCode(code):
     # number of lines in s becomes the number of rows for 2d list
@@ -60,5 +88,5 @@ def reloadColors(app):
     app.colorSchemeSwitcherUrl = app.lightUrl if app.colorSchemeIsLight else app.darkUrl
 
 if __name__ == '__main__':
-    pass
+    print(processImage('/Users/aravbhardwaj/Documents/Code/TERM-PROJ/images/Screenshot 2024-12-03 at 10.22.45.png'))
     

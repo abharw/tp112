@@ -14,7 +14,13 @@ def onAppStart(app):
     app.buttonTop, app.buttonLeft = 10, 10
     app.buttonWidth, app.buttonHeight = 180, 80
     app.lineOffset = 36
-    app.imagePath = './images/test1.png'
+    app.imagePath = None
+
+    app.rows = None
+    app.cols = None
+    app.codeList = None
+
+
     app.code = None
     app.output = None
     app.grid = None
@@ -85,22 +91,25 @@ def getOutput(app):
 def setGridParams(app):
     app.boardWidth = 800
     app.boardHeight = 350
+    print(app.imagePath)
     app.codeList, app.rows, app.cols = getCodeListAndDimensions(app.imagePath)
-    app.grid = TextGrid(
-        rows = app.rows,
-        cols = app.cols,
-        boardLeft = 35,
-        boardWidth = app.boardWidth - 400,
-        boardHeight = app.boardHeight - 100,
-        boardTop = 150,
-        cellBorderWidth = 1,
-        selection = None,
-        hovered = None,
-        codeList=app.codeList,
-        cellBorderColor=None,
-        cellColor=None,
-        textColor=app.textColor
-    )
+
+    if app.rows is not None and app.cols is not None:
+        app.grid = TextGrid(
+            rows = app.rows,
+            cols = app.cols,
+            boardLeft = 35,
+            boardWidth = app.boardWidth - 400,
+            boardHeight = app.boardHeight - 100,
+            boardTop = 150,
+            cellBorderWidth = 1,
+            selection = None,
+            hovered = None,
+            codeList=app.codeList,
+            cellBorderColor=None,
+            cellColor=None,
+            textColor=app.textColor
+        )
 
 def main_onMouseMove(app, mouseX, mouseY):
     if app.grid is not None:
@@ -162,8 +171,9 @@ def main_redrawAll(app):
 
     # display code and run button
     if app.code is not None:
-        drawLine(0, 100, app.width, 100, fill=app.secondary)        
-        drawGrid(app, grid=app.grid)
+        drawLine(0, 100, app.width, 100, fill=app.secondary)  
+        if app.grid is not None:      
+            drawGrid(app, grid=app.grid)
         # run button
         drawTextButton(app, 'Run Code', app.runButtonX, app.runButtonY, 
                 app.buttonWidth, app.buttonHeight, fill=app.green)
@@ -191,7 +201,7 @@ def fileTree_onScreenActivate(app):
     app.lineOffset = 30
     app.selectedFileIndex = 0
     app.fileTreeLeft = 40
-    app.fileTreeTop = app.height // 2 - (len(app.files) * app.lineOffset) + 150
+    app.fileTreeTop = app.height // 2 - (len(app.files) * app.lineOffset) + 200
     app.characterWidth = 20
     app.characterHeight = 20
     app.selectedFile = getCurrentFilePath(app)
@@ -226,10 +236,12 @@ def isImage(app):
     app.selectedFileIsImage = True if app.selectedFile.endswith(fileSuffixes) else False
 
 def listFiles(path='.'):
+    absolutePath = os.path.abspath(path)
+
     files = []
     dirs = []
-    for file in os.listdir(path):
-        if os.path.isdir(file):
+    for file in os.listdir(absolutePath):
+        if os.path.isdir(os.path.join(absolutePath, file)):
             dirs.append(file)
         else:
             files.append(file)
@@ -238,32 +250,40 @@ def listFiles(path='.'):
 def getCurrentFilePath(app):
     return os.path.abspath(app.files[app.selectedFileIndex])
 
+def joinPaths(app):
+    currentDirectory = app.fileStack[-1]
+    selectedFile = app.files[app.selectedFileIndex]
+    return os.path.join(currentDirectory, selectedFile)
+
 def fileTree_onKeyPress(app, key):
     app.flashImageOpenError = False
     if key == 'up' and app.selectedFileIndex > 0:
         app.selectedFileIndex -= 1
-        app.selectedFile = app.files[app.selectedFileIndex]
+        app.selectedFile = joinPaths(app)
         isImage(app)
     elif key == 'down' and app.selectedFileIndex < len(app.files) - 1:
+        print(app.selectedFile)
         app.selectedFileIndex += 1
-        app.selectedFile = app.files[app.selectedFileIndex]
+        app.selectedFile = joinPaths(app)
         isImage(app)
     elif key == 'enter' and os.path.isdir(getCurrentFilePath(app)):
         app.fileStack.append(getCurrentFilePath(app))
         app.files = listFiles(getCurrentFilePath(app))
         app.selectedFileIndex = 0
-        app.selectedFile = app.files[app.selectedFileIndex]
+        app.selectedFile = joinPaths(app)
         isImage(app)
     elif key == 'backspace' and len(app.fileStack) > 1:
         app.fileStack.pop()
         previousDir = app.fileStack[-1]
         app.files = listFiles(previousDir)
         app.selectedFileIndex = 0
-        app.selectedFile = app.files[app.selectedFileIndex]
+        app.selectedFile = joinPaths(app)
         isImage(app)
     elif key == 'tab':
+        app.selectedFile = joinPaths(app)
         if app.selectedFileIsImage:
-            target = processImage(app.imagePath)
+            app.imagePath = app.selectedFile
+            target = processImage(app.selectedFile)
             app.code = target.splitlines()
             setGridParams(app) 
             setActiveScreen('main')
@@ -281,6 +301,8 @@ def fileTree_redrawAll(app):
     # draw back button
     drawTextButton(app, 'Go Back', app.backButtonX, app.backButtonY, 
                 app.buttonWidth, app.buttonHeight, fill=app.textColor)
+    drawLabel(app.selectedFile, 10, 130, size=24, fill=app.textColor, align='left', font='Courier')
+    drawLine(0, 150, app.width, 150, fill=app.secondary)
     if app.flashImageOpenError:
         drawImageOpenError(app)
 
@@ -295,10 +317,10 @@ def trace_onScreenActivate(app):
     app.backButtonX = 10
     app.backButtonY = 10
     app.traceHistory = trace(app.grid.codeList)
+    app.currentLine = 0
 
 def trace_onKeyPress(app, key):
     pass
-
 def trace_onMousePress(app, mouseX, mouseY):
     if (app.backButtonX <= mouseX <= app.backButtonX + app.buttonWidth and 
         app.backButtonY <= mouseY <= app.backButtonY + app.buttonHeight):
@@ -309,6 +331,7 @@ def trace_redrawAll(app):
     drawTextButton(app, 'Go Back', app.backButtonX, app.backButtonY, 
                    app.buttonWidth, app.buttonHeight, fill=app.textColor)
     drawGrid(app, grid=app.grid)
+
 
 if __name__ == '__main__':
     main(app)
