@@ -271,6 +271,8 @@ def setGridParams(app):
 ####################
 
 def fileTree_onScreenActivate(app):
+    # reset output 
+    app.output = None
     # file tree parameters
     app.files = listFiles()
     # found this function on https://docs.python.org/3/library/os.html  
