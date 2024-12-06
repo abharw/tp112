@@ -4,12 +4,12 @@ from grid import Grid
 
 # inherits from the Grid superclass, but adds text rendering
 class TextGrid(Grid):
-    def __init__(self, rows, cols, boardLeft, boardTop, 
-                 boardWidth, boardHeight, cellBorderWidth,
+    def __init__(self, rows, cols, gridLeft, gridTop, 
+                 gridWidth, gridHeight, cellBorderWidth,
                  selection, hovered, codeList, cellBorderColor, cellColor,textColor):
         
-        super().__init__(rows, cols, boardLeft, boardTop, 
-                         boardWidth, boardHeight, cellBorderWidth,
+        super().__init__(rows, cols, gridLeft, gridTop, 
+                         gridWidth, gridHeight, cellBorderWidth,
                          selection, hovered, cellBorderColor, cellColor)
 
         self.codeList = codeList
@@ -21,8 +21,8 @@ def drawGrid(grid: TextGrid):
             drawCell(grid, row, col)
 
 def getCellSize(grid):
-    cellWidth = grid.boardWidth / grid.cols
-    cellHeight = grid.boardHeight / grid.rows
+    cellWidth = grid.gridWidth / grid.cols
+    cellHeight = grid.gridHeight / grid.rows
     return (cellWidth, cellHeight)
 
 def drawCell(grid: TextGrid, row, col):
@@ -36,9 +36,9 @@ def drawCell(grid: TextGrid, row, col):
         color = grid.cellColor
 
     character = grid.codeList[row][col]
-    posX = grid.boardLeft + (cellWidth * col) + cellWidth // 2
+    posX = grid.gridLeft + (cellWidth * col) + cellWidth // 2
     # align characters better vertically in the grid
-    posY = grid.boardTop + (cellHeight * row) + cellHeight - 6
+    posY = grid.gridTop + (cellHeight * row) + cellHeight - 6
     drawRect(cellLeft, cellTop, cellWidth, cellHeight,
              fill=color, border=grid.cellBorderColor,
              borderWidth=grid.cellBorderWidth)

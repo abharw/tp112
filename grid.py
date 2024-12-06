@@ -4,15 +4,15 @@ from cmu_graphics import *
 # adapted largely from CMU CS academy example 
 # main difference is distinction between hovering and selecting
 class Grid:
-    def __init__(self,rows, cols, boardLeft, boardTop, 
-                boardWidth, boardHeight, cellBorderWidth,
+    def __init__(self,rows, cols, gridLeft, gridTop, 
+                gridWidth, gridHeight, cellBorderWidth,
                 selection, hovered, cellBorderColor, cellColor):
         self.rows = rows
         self.cols = cols
-        self.boardLeft = boardLeft
-        self.boardTop = boardTop
-        self.boardWidth = boardWidth
-        self.boardHeight = boardHeight
+        self.gridLeft = gridLeft
+        self.gridTop = gridTop
+        self.gridWidth = gridWidth
+        self.gridHeight = gridHeight
         self.cellBorderWidth = cellBorderWidth
         self.selection = selection
         self.hovered = hovered
@@ -20,8 +20,8 @@ class Grid:
         self.cellColor = cellColor
 
     def getCell(self, x, y):
-        dx = x - self.boardLeft
-        dy = y - self.boardTop
+        dx = x - self.gridLeft
+        dy = y - self.gridTop
         cellWidth, cellHeight = self.getCellSize()
         row = math.floor(dy / cellHeight)
         col = math.floor(dx / cellWidth)
@@ -32,13 +32,13 @@ class Grid:
 
     def getCellLeftTop(self, row, col):
         cellWidth, cellHeight = self.getCellSize()
-        cellLeft = self.boardLeft + col * cellWidth
-        cellTop = self.boardTop + row * cellHeight
+        cellLeft = self.gridLeft + col * cellWidth
+        cellTop = self.gridTop + row * cellHeight
         return (cellLeft, cellTop)
 
     def getCellSize(self):
-        cellWidth = self.boardWidth / self.cols
-        cellHeight = self.boardHeight / self.rows
+        cellWidth = self.gridWidth / self.cols
+        cellHeight = self.gridHeight / self.rows
         return (cellWidth, cellHeight)
 
 def drawGrid(app, grid: Grid):

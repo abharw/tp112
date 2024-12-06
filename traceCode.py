@@ -68,7 +68,7 @@ def executeIf(condition, body, variables, functions, codeSteps):
     # only need to process if block if boolValue is True
     # otherwise, nothing happens 
     if boolValue:
-        codeSteps.append(f'If condition [{condition}] is True')
+        codeSteps.append(f'If condition is True')
         codeSteps.append(f'Entering if block...')
         for ifLine in body:
             if 'print' in ifLine:
@@ -76,7 +76,7 @@ def executeIf(condition, body, variables, functions, codeSteps):
             else:
                 traceHelper([ifLine], variables, functions, codeSteps)
     else:
-        codeSteps.append(f'If condition [{condition}] is False, skipping if block')
+        codeSteps.append(f'If condition is False')
 
 def executeWhile(condition, body, variables, functions, codeSteps):
     # evaluate the condition
@@ -85,7 +85,6 @@ def executeWhile(condition, body, variables, functions, codeSteps):
     while boolValue:
         # track while condition
         codeSteps.append(f'While condition [{condition}] is {boolValue}')
-        codeSteps.append('Entering while loop...')
         for whileLine in body:
             traceHelper([whileLine], variables, functions, codeSteps)
         # processed the while loop, recheck if the condition is still true
@@ -223,9 +222,7 @@ def traceHelper(code, variables, functions, codeSteps):
             # extract while loop body
             whileBody, rest = getIndentBody(rest)
             # execute the while loop
-            codeSteps.append('Entering while loop...')
             executeWhile(whileCondition, whileBody, variables, functions, codeSteps)
-            codeSteps.append('Exiting while loop...')
             # skip to rest of code
             return traceHelper(rest, variables, functions, codeSteps)
         

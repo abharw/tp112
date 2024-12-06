@@ -1,5 +1,5 @@
 # standard imports
-import io, sys, os, string
+import io, sys, os, string, copy
 # miscellaneous utility functions, see utils.py
 from utils import (
     processImageFile, 
@@ -81,12 +81,15 @@ def main_onScreenActivate(app):
     app.runButtonX, app.runButtonY = 250, 10
     app.traceButtonX, app.traceButtonY = 490, 10
     app.colorSchemeSwitcherX, app.colorSchemeSwitcherY = 800, 50
-    app.textModeButtonX, app.textModeButtonY = 700, 120
+    app.textModeButtonX, app.textModeButtonY = 10, 120
 
-    app.outputBoxX, app.outputBoxY = 400, 500
-    app.outputBoxHeight = 500
+    app.outputBoxX, app.outputBoxY = 0, 500
+    app.outputBoxWidth, app.outputBoxHeight = 800, 500
     
     app.isInsertMode = True
+    app.savedGrid = None 
+
+    app.error = False
 
 def main_onMouseMove(app, mouseX, mouseY):
     if app.grid is not None:
@@ -97,15 +100,13 @@ def main_onKeyPress(app, key):
     # prevents user from pressing keys if grid is not loaded
     if app.grid is not None:
         if app.grid.selection is not None:
-            row, col = app.grid.selection 
+            row, col = app.grid.selection
             if key == 'backspace':
                 if app.isInsertMode:
                     app.grid.codeList[row].pop(col)
                     app.grid.codeList[row].append('')
                 else:
                     app.grid.codeList[row][col] = ''
-            elif key == 'space':
-                app.grid.codeList[row].insert(col, '')
             elif key == 'space':
                 app.grid.codeList[row].insert(col, '')
             elif key == 'right' and col < len(app.grid.codeList[0]) - 1:
@@ -122,13 +123,12 @@ def main_onKeyPress(app, key):
                         app.grid.codeList[row].insert(col, key)
                     else:
                         app.grid.codeList[row][col] = key
-            
+
 def main_onMousePress(app, mouseX, mouseY):
     # check if file explorer is clicked
     if (app.fileExplorerButtonX <= mouseX <= app.fileExplorerButtonX + app.buttonWidth and 
         app.fileExplorerButtonY <= mouseY <= app.fileExplorerButtonY + app.buttonHeight):
         setActiveScreen('fileTree')
-    
      # check if colorscheme switcher is clicked
     im_width, im_height = getScaledImageSize(app.colorSchemeSwitcherUrl, 7)
     if (app.colorSchemeSwitcherX - im_width // 2 <= mouseX <= app.colorSchemeSwitcherX + im_width // 2 and 
@@ -138,17 +138,26 @@ def main_onMousePress(app, mouseX, mouseY):
         if app.grid != None:
             # reload grid colors
             updateGridColors(app, grid=app.grid)
-    
     # this functionality only makes sense when there is code
     if app.code is not None:
         # check if run button is clicked
         if (app.runButtonX <= mouseX <= app.runButtonX + app.buttonWidth and 
             app.runButtonY <= mouseY <= app.runButtonY + app.buttonHeight):
+            # reload if grid changes
+            if gridHasChanged(app):
+                app.grid.codeList = copy.deepcopy(app.savedGrid)
             getOutput(app)
-        # check if trace button is clicked
+        # check if trace button is clicked 
         elif (app.traceButtonX <= mouseX <= app.traceButtonX + app.buttonWidth and 
             app.traceButtonY <= mouseY <= app.traceButtonY + app.buttonHeight):
-            setActiveScreen('trace')
+            # reload if grid changes
+            if gridHasChanged(app):
+                app.grid.codeList = copy.deepcopy(app.savedGrid)
+            # use this to check for errors
+            getOutput(app) 
+            # only let the user trace if code is error-free!
+            if not app.error:
+                setActiveScreen('trace')
         # check if text mode button is clicked
         elif (app.textModeButtonX <= mouseX <= app.textModeButtonX + app.buttonWidth * 1.5 and 
         app.textModeButtonY <= mouseY <= app.textModeButtonY + app.buttonHeight // 2):
@@ -181,14 +190,14 @@ def main_redrawAll(app):
                        app.buttonWidth, app.buttonHeight, fill=app.textColor)
     # draw output box and text edit mode button
     if app.grid is not None:
-        drawRect(app.outputBoxX, app.outputBoxY, app.width, app.outputBoxHeight, 
-                fill=None, border=app.secondary)
+        drawRect(app.outputBoxX, app.outputBoxY, app.outputBoxWidth, app.outputBoxHeight, 
+                fill=None, border=app.secondary, borderWidth=2)
         otherMode = 'Replace' if app.isInsertMode else 'Insert'
         drawTextButton(app, f'Switch to {otherMode} mode', app.textModeButtonX, app.textModeButtonY,
                    app.buttonWidth * 1.5, app.buttonHeight // 2, fill=app.textColor)
     # display output 
     if app.output is not None:
-        drawOutput(app, 420, 530)
+        drawOutput(app, app.outputBoxX+20, app.outputBoxY+20)
     # starter message
     if app.grid == None:
         drawLabel(f'Select an image file from the file explorer to get started!', 
@@ -198,7 +207,8 @@ def main_redrawAll(app):
 def drawOutput(app, x, y):
     for i in range(len(app.output)):
         line = app.output[i]
-        drawLabel(line, x, y + app.lineOffset*i, size=30, align='left', font='Courier', fill=app.tertiary)
+        drawLabel(line, x, y + app.lineOffset*i, size=30, align='left', 
+                  font='Courier', fill=app.tertiary)
 
 def drawColorschemeSwitcher(app, x, y):
     # images from https://www.flaticon.com/free-icons/light-mode 
@@ -208,10 +218,14 @@ def drawColorschemeSwitcher(app, x, y):
             width=im_width, height=im_height, 
             align='center', opacity=40)
 
+def gridHasChanged(app):
+    if app.savedGrid is not None:
+        return app.grid.codeList != app.savedGrid
+    return False
+
 def getOutput(app):
     # https://docs.python.org/3/library/functions.html#exec 
     # used chatGPT to figure out how to get the exec output as a string, so basically this entire function
-    
     # define a string buffer to capture output
     outputBuffer = io.StringIO()
     # redirect stdout to the buffer
@@ -219,8 +233,10 @@ def getOutput(app):
     # execute the code
     try:
         exec(stringifyCodeList(app.grid))
-    except:
-        print("There's an error in the code!")
+        app.error = False
+    except Exception as e:
+        print(f'Error!\n{e}')
+        app.error = True 
     # reset stdout to default
     sys.stdout = sys.__stdout__
     # retrieve the captured output
@@ -228,19 +244,19 @@ def getOutput(app):
     app.output = capturedOutput.splitlines()
 
 def setGridParams(app):
-    # set the board width 
-    app.boardWidth = 800 
-    # adjust the grid size based on the board width and height
+    # set the grid width 
+    app.gridWidth = 800 
+    # adjust the grid size based on the grid width and height
     app.codeList, app.rows, app.cols = getCodeListAndDimensions(app.filePath)
 
     if app.rows is not None and app.cols is not None:
         app.grid = TextGrid (
             rows=app.rows,
             cols=app.cols,
-            boardLeft=35,
-            boardWidth=app.boardWidth - 400,
-            boardHeight=app.rows * 40 - 100,
-            boardTop=150,
+            gridLeft=10,
+            gridWidth=app.gridWidth - 400,
+            gridHeight=app.rows * 40 - 100,
+            gridTop=180,
             cellBorderWidth=1,
             selection=None,
             hovered=None,
@@ -262,8 +278,8 @@ def fileTree_onScreenActivate(app):
     app.previousFiles = app.files
     app.lineOffset = 30
     app.selectedFileIndex = 0
-    app.fileTreeLeft = 40
-    app.fileTreeTop = 200
+    app.fileTreeLeft = 10
+    app.fileTreeTop = 170
     app.characterWidth = 20
     app.characterHeight = 20
     app.selectedFile = getCurrentFilePath(app)
@@ -342,6 +358,7 @@ def moveFileSelection(app, index):
     fileIsValid(app)
 
 def fileTree_onKeyPress(app, key):
+
     app.flashFileOpenError = False
     if key == 'up' and app.selectedFileIndex > 0:
         moveFileSelection(app, app.selectedFileIndex -1)
@@ -406,46 +423,34 @@ def fileTree_redrawAll(app):
 # TRACE SCREEN #
 ################
 
-def drawCodeSteps(app):
-    # storage for codeSteps that go off the screen
-    tempStorage = []
-    # default message
-    if app.codeStepsOnScreen == []:
-        drawLabel("Click 'Next Step' to trace the code!", app.codeStepsX, 
-                app.codeStepsY, fill=app.secondary, align='left', 
-                font='Courier', size=30)
-    # draw all steps
-    stepListIndex = 0
-    stepIndexOnScreen = 0
-    while stepListIndex < len(app.codeStepsOnScreen):
-        currentStep = app.codeStepsOnScreen[stepListIndex]
-        codeStepYValue = app.codeStepsY + (stepIndexOnScreen * app.codeStepsYOffset)
-
-        drawLabel(currentStep, app.codeStepsX, 
-            codeStepYValue, fill=app.secondary, align='left', 
-            font='Courier', size=30)
-        stepIndexOnScreen += 1
-        stepListIndex += 1
-        # vertical text wrap
-        if codeStepYValue > app.height:
-            tempStorage = app.codeStepsOnScreen
-            stepIndexOnScreen = 0
-
-def trace_onScreenActivate(app):
+def trace_onScreenActivate(app): 
     app.codeStepsList = trace(stringifyCodeList(app.grid))
     app.codeStepsYOffset = 25
     
-    app.codeStepsX = 45
-    app.codeStepsY = 520
+    app.codeStepsX = 440
+    app.codeStepsY = 120
 
-    app.previousButtonX = 250
-    app.previousButtonY = 10
+    app.previousButtonX = 10
+    app.previousButtonY = 120
 
-    app.nextButtonX = 490
-    app.nextButtonY = 10
+    app.nextButtonX = 200
+    app.nextButtonY = 120
 
     app.currentCodeStepIndex = 0
     app.codeStepsOnScreen = []
+
+def drawCodeSteps(app):
+    # default message
+    if app.codeStepsOnScreen == []:
+        drawLabel("Click 'Next Step' to begin!", app.codeStepsX, 
+                app.codeStepsY, fill=app.secondary, align='left', 
+                font='Courier', size=30)
+    # draw all steps
+    for i in range(len(app.codeStepsOnScreen)):
+        currentStep = app.codeStepsOnScreen[i]
+        drawLabel(currentStep, app.codeStepsX, 
+                app.codeStepsY + (i * app.codeStepsYOffset),
+                fill=app.secondary, align='left', font='Courier', size=30)
 
 def trace_onMousePress(app, mouseX, mouseY):
     # check if back button pressed
@@ -484,14 +489,14 @@ def trace_redrawAll(app):
     drawTextButton(app, 'Go Back', app.backButtonX, app.backButtonY, 
             app.buttonWidth, app.buttonHeight, fill=app.textColor)
     drawTextButton(app, 'Previous Step', app.previousButtonX, app.previousButtonY, 
-            app.buttonWidth, app.buttonHeight, fill=app.textColor)
+            app.buttonWidth, app.buttonHeight // 2, fill=app.textColor)
     drawTextButton(app, 'Next Step', app.nextButtonX, app.nextButtonY, 
-            app.buttonWidth, app.buttonHeight, fill=app.textColor)
+            app.buttonWidth, app.buttonHeight // 2, fill=app.textColor)
     # reuse the grid for display purposes
     drawGrid(grid=app.grid)
     # lines for UI
     drawLine(0, 100, app.width, 100, fill=app.secondary)
-    drawLine(0, app.height // 2, app.width, app.height // 2, fill=app.secondary)
+    drawLine(420, 100, 420, app.height, fill=app.secondary)
     # core UI for code tracing
     drawCodeSteps(app)
     # colorscheme switcher
